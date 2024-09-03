@@ -8,43 +8,40 @@ configure_logger()
 logger = logging.getLogger(__name__)
 
 
-def get_random_wikipedia_articles(
-    target_language: str, num_articles: int = 1000
-) -> Set[str]:
+def get_random_wikipedia_articles(target_language: str, num_articles: int = 1000):
     """
-    Retrieves the text content of random Wikipedia articles in the target language.
+    Yields text content of random Wikipedia articles in the target language.
 
     Args:
         target_language (str): Target language code (e.g., 'fr' for French)
         num_articles (int): Number of articles to retrieve
 
-    Returns:
-        Set[str]: Set of text contents of articles in the target language
+    Yields:
+        str: Text content of an article in the target language
     """
     wikipedia.set_lang(target_language)
-    articles = set()
+    articles_yielded = 0
 
     with tqdm(
         total=num_articles, desc=f"Retrieving {target_language} Wikipedia articles"
     ) as pbar:
-        while len(articles) < num_articles:
-            remaining = num_articles - len(articles)
-            random_titles = wikipedia.random(remaining)
+        while articles_yielded < num_articles:
+            random_titles = wikipedia.random(num_articles - articles_yielded)
 
             for title in random_titles:
-                if len(articles) >= num_articles:
+                if articles_yielded >= num_articles:
                     break
                 try:
                     page_content = wikipedia.page(title).content
-                    if page_content not in articles:
-                        articles.add(page_content)
-                        pbar.update(1)
+                    yield page_content
+                    articles_yielded += 1
+                    pbar.update(1)
                 except Exception as e:
-                    logger.error(f"Error retrieving content for {title}")
-    logger.info(f"Number of articles retrieved: {len(articles)}")
-    return articles
+                    logger.warning(f"Error retrieving content for {title}")
+
+    logger.info(f"Number of articles retrieved: {articles_yielded}")
 
 
 if __name__ == "__main__":
     articles = get_random_wikipedia_articles("fr", 10)
-    print(articles)
+    print(len([article for article in articles]))

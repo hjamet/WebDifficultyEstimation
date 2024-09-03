@@ -40,8 +40,7 @@ def get_random_wikipedia_articles(
                         articles.add(page_content)
                         pbar.update(1)
                 except Exception as e:
-                    logger.error(f"Error retrieving content for {title}: {str(e)}")
-
+                    logger.error(f"Error retrieving content for {title}")
     logger.info(f"Number of articles retrieved: {len(articles)}")
     return articles
 

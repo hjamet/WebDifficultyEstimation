@@ -1,5 +1,11 @@
 import wikipedia
 from typing import Set
+from tqdm import tqdm
+import logging
+from utils.logger import configure_logger
+
+configure_logger()
+logger = logging.getLogger(__name__)
 
 
 def get_random_wikipedia_articles(
@@ -18,20 +24,28 @@ def get_random_wikipedia_articles(
     wikipedia.set_lang(target_language)
     articles = set()
 
-    while len(articles) < num_articles:
-        remaining = num_articles - len(articles)
-        random_titles = wikipedia.random(remaining)
+    with tqdm(
+        total=num_articles, desc=f"Retrieving {target_language} Wikipedia articles"
+    ) as pbar:
+        while len(articles) < num_articles:
+            remaining = num_articles - len(articles)
+            random_titles = wikipedia.random(remaining)
 
-        for title in random_titles:
-            try:
-                page_content = wikipedia.page(title).content
-                articles.add(page_content)
-            except Exception as e:
-                print(f"Error retrieving content for {title}: {e}")
+            for title in random_titles:
+                if len(articles) >= num_articles:
+                    break
+                try:
+                    page_content = wikipedia.page(title).content
+                    if page_content not in articles:
+                        articles.add(page_content)
+                        pbar.update(1)
+                except Exception as e:
+                    logger.error(f"Error retrieving content for {title}: {str(e)}")
 
+    logger.info(f"Number of articles retrieved: {len(articles)}")
     return articles
 
 
 if __name__ == "__main__":
-    articles = get_random_wikipedia_articles("fr", 1000)
-    print(f"Number of articles retrieved: {len(articles)}")
+    articles = get_random_wikipedia_articles("fr", 10)
+    print(articles)
